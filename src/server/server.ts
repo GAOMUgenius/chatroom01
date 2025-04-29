@@ -35,8 +35,9 @@ class MyTCPServer {
     }
 
     private serverConnectEvent(client: net.Socket) {
-        const clientInfo = `${client.remoteAddress}:${client.remotePort}`;
         console.log(`客户端已连接: ${client.remoteAddress}:${client.remotePort}`);
+        //设计用户ID为标识
+        const clientId = `${client.remoteAddress}:${client.remotePort}`;
         // 添加客户端到用户列表
         this.room.users.push([`${client.remoteAddress}:${client.remotePort}`, client]);
 
@@ -45,7 +46,7 @@ class MyTCPServer {
             if( content === 'kick') {
                 this.disconnectClient(client)
             } else {
-                this.broadcast( `${clientInfo}: ${content}`)
+                this.broadcast( `${clientId}: ${content}`, client)
             }
         });
         client.on('end', () => {
@@ -58,9 +59,9 @@ class MyTCPServer {
         });
     }
 
-    private broadcast(content: string) {
+    private broadcast(content: string, sender: net.Socket) {
         for (const [_, userClient] of this.room.users) {
-            if (userClient.writable) {
+            if (userClient.writable && userClient !== sender) {
                 userClient.write(content);
             }
         }
@@ -90,6 +91,11 @@ class MyTCPServer {
 
         rl.question('输入 "shutdown" 关闭服务器: ', (input: string) => {
             if (input === 'shutdown') {
+                 // 关闭所有客户端连接
+                for (const [_, userClient] of this.room.users) {
+                    userClient.destroy(); // 强制断开客户端
+                }
+                //关闭服务器
                 this.server.close(() => {
                     console.log('服务器已关闭');
                 });
