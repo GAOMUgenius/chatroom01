@@ -53,7 +53,7 @@ class MyTCPClient {
         });
         this.client.on('data', (chunk) => {
             const content = chunk.toString();
-            console.log(content);
+            console.log('你接收到了一条消息\n' + content);
         });
         this.client.on('end', () => {
             console.log('与服务器的连接已断开');
@@ -65,7 +65,7 @@ class MyTCPClient {
         });
     }
     readInput() {
-        this.rl.question('请输入消息(输入"exit"断开连接): ', (input) => {
+        this.rl.question('请输入消息(输入"exit"断开连接):\n ', (input) => {
             if (input === 'exit') {
                 this.client.end();
                 this.rl.close();

@@ -82,7 +82,7 @@ class MyTCPServer {
     }
     broadcast(content, sender) {
         for (const [_, userClient] of this.room.users) {
-            if (userClient.writable && userClient !== sender) {
+            if (userClient.writable) {
                 userClient.write(content);
             }
         }

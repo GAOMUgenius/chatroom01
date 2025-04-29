@@ -61,7 +61,7 @@ class MyTCPServer {
 
     private broadcast(content: string, sender: net.Socket) {
         for (const [_, userClient] of this.room.users) {
-            if (userClient.writable && userClient !== sender) {
+            if (userClient.writable) {
                 userClient.write(content);
             }
         }
