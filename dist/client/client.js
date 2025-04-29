@@ -65,9 +65,15 @@ class MyTCPClient {
         });
     }
     readInput() {
-        this.rl.question('请输入消息: ', (input) => {
-            this.client.write(input);
-            this.readInput();
+        this.rl.question('请输入消息(输入"exit"断开连接): ', (input) => {
+            if (input === 'exit') {
+                this.client.end();
+                this.rl.close();
+            }
+            else {
+                this.client.write(input);
+                this.readInput();
+            }
         });
     }
 }

@@ -1,5 +1,6 @@
 // src/server/server.ts
 import * as net from 'net';
+import * as readline from 'readline';
 
 // 定义房间类型
 type Room = {
@@ -21,6 +22,7 @@ class MyTCPServer {
         };
         this.server = net.createServer(this.serverConnectEvent.bind(this));
         this.initServer();
+        this.listenForShutdown()
     }
 
     private initServer() {
@@ -33,13 +35,18 @@ class MyTCPServer {
     }
 
     private serverConnectEvent(client: net.Socket) {
+        const clientInfo = `${client.remoteAddress}:${client.remotePort}`;
         console.log(`客户端已连接: ${client.remoteAddress}:${client.remotePort}`);
         // 添加客户端到用户列表
         this.room.users.push([`${client.remoteAddress}:${client.remotePort}`, client]);
 
         client.on('data', (chunk) => {
             const content = chunk.toString();
-            this.broadcast(content);
+            if( content === 'kick') {
+                this.disconnectClient(client)
+            } else {
+                this.broadcast( `${clientInfo}: ${content}`)
+            }
         });
         client.on('end', () => {
             console.log(`客户端已断开连接: ${client.remoteAddress}:${client.remotePort}`);
@@ -64,6 +71,34 @@ class MyTCPServer {
         if (index !== -1) {
             this.room.users.splice(index, 1);
         }
+    }
+
+    //断开客户端连接
+    private disconnectClient(client: net.Socket) {
+        const clientInfo = `${client.remoteAddress}:${client.remotePort}`;
+        console.log(`正在断开客户端连接: ${clientInfo}`);
+        client.end();
+        this.removeClient(client);
+    }
+
+    //关闭服务器
+    private listenForShutdown() {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        rl.question('输入 "shutdown" 关闭服务器: ', (input: string) => {
+            if (input === 'shutdown') {
+                this.server.close(() => {
+                    console.log('服务器已关闭');
+                });
+                rl.close();
+            } else {
+                rl.close();
+                this.listenForShutdown();
+            }
+        });
     }
 }
 

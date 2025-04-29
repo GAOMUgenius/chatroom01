@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/server/server.ts
 const net = __importStar(require("net"));
+const readline = __importStar(require("readline"));
 // 定义服务器类
 class MyTCPServer {
     constructor(port = 8080, roomName = '大厅') {
@@ -45,6 +46,7 @@ class MyTCPServer {
         };
         this.server = net.createServer(this.serverConnectEvent.bind(this));
         this.initServer();
+        this.listenForShutdown();
     }
     initServer() {
         this.server.listen(this.room.port, () => {
@@ -55,12 +57,18 @@ class MyTCPServer {
         });
     }
     serverConnectEvent(client) {
+        const clientInfo = `${client.remoteAddress}:${client.remotePort}`;
         console.log(`客户端已连接: ${client.remoteAddress}:${client.remotePort}`);
         // 添加客户端到用户列表
         this.room.users.push([`${client.remoteAddress}:${client.remotePort}`, client]);
         client.on('data', (chunk) => {
             const content = chunk.toString();
-            this.broadcast(content);
+            if (content === 'kick') {
+                this.disconnectClient(client);
+            }
+            else {
+                this.broadcast(`${clientInfo}: ${content}`);
+            }
         });
         client.on('end', () => {
             console.log(`客户端已断开连接: ${client.remoteAddress}:${client.remotePort}`);
@@ -83,6 +91,32 @@ class MyTCPServer {
         if (index !== -1) {
             this.room.users.splice(index, 1);
         }
+    }
+    //断开客户端连接
+    disconnectClient(client) {
+        const clientInfo = `${client.remoteAddress}:${client.remotePort}`;
+        console.log(`正在断开客户端连接: ${clientInfo}`);
+        client.end();
+        this.removeClient(client);
+    }
+    //关闭服务器
+    listenForShutdown() {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        rl.question('输入 "shutdown" 关闭服务器: ', (input) => {
+            if (input === 'shutdown') {
+                this.server.close(() => {
+                    console.log('服务器已关闭');
+                });
+                rl.close();
+            }
+            else {
+                rl.close();
+                this.listenForShutdown();
+            }
+        });
     }
 }
 // 启动服务器
