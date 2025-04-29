@@ -56,6 +56,8 @@ class MyTCPServer {
     }
     serverConnectEvent(client) {
         console.log(`客户端已连接: ${client.remoteAddress}:${client.remotePort}`);
+        // 添加客户端到用户列表
+        this.room.users.push([`${client.remoteAddress}:${client.remotePort}`, client]);
         client.on('data', (chunk) => {
             const content = chunk.toString();
             this.broadcast(content);
