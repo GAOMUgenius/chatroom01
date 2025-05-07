@@ -28,6 +28,7 @@ class MyTCPClient {
         this.client.on('end', () => {
             console.log('与服务器的连接已断开');
             this.rl.close();
+            
         });
         this.client.on('error', (err) => {
             console.error(`与服务器的连接发生错误: ${err.message}`);
@@ -41,8 +42,14 @@ class MyTCPClient {
                 this.client.end();
                 this.rl.close();
             } else {
-                this.client.write(input);
-                this.readInput();
+                this.client.write(input, (err) => {
+                    if (err) {
+                        console.log('发送消息失败');
+                    } else {
+                        console.log('你发出了一条消息\n' + input);
+                    }
+                    this.readInput();
+                });
             }
         });
     }

@@ -71,8 +71,15 @@ class MyTCPClient {
                 this.rl.close();
             }
             else {
-                this.client.write(input);
-                this.readInput();
+                this.client.write(input, (err) => {
+                    if (err) {
+                        console.log('发送消息失败');
+                    }
+                    else {
+                        console.log('你发出了一条消息\n' + input);
+                    }
+                    this.readInput();
+                });
             }
         });
     }
